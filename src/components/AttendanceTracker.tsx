@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { BookOpen, TrendingUp, TrendingDown, ClipboardPaste, Trash2, AlertCircle } from "lucide-react";
+import { Sparkles, TrendingUp, TrendingDown, Zap, X, Ghost } from "lucide-react";
 
 interface SubjectData {
   id: number;
@@ -26,10 +26,8 @@ const AttendanceTracker = () => {
     const parsed: SubjectData[] = [];
 
     for (const line of lines) {
-      // Skip header line
       if (line.includes('Subject Code') || line.includes('Percentage') || line.trim() === '') continue;
 
-      // Split by tabs or multiple spaces
       const parts = line.split(/\t+|\s{2,}/).map(p => p.trim()).filter(Boolean);
       
       if (parts.length >= 9) {
@@ -46,24 +44,7 @@ const AttendanceTracker = () => {
         if (!isNaN(id)) {
           const attended = present + od + makeup;
           const total = attended + absent;
-          const targetPercentage = 0.75;
-
-          // Calculate classes that can be skipped while staying at 75%
-          // After skipping X classes: attended / (total + X) >= 0.75
-          // attended >= 0.75 * (total + X)
-          // attended >= 0.75 * total + 0.75 * X
-          // attended - 0.75 * total >= 0.75 * X
-          // X <= (attended - 0.75 * total) / 0.75
-          // X <= (4 * attended - 3 * total) / 3
           const canSkip = Math.max(0, Math.floor((4 * attended - 3 * total) / 3));
-
-          // Calculate classes needed to reach 75%
-          // After attending Y more classes: (attended + Y) / (total + Y) >= 0.75
-          // attended + Y >= 0.75 * (total + Y)
-          // attended + Y >= 0.75 * total + 0.75 * Y
-          // 0.25 * Y >= 0.75 * total - attended
-          // Y >= (0.75 * total - attended) / 0.25
-          // Y >= 3 * total - 4 * attended
           const needToAttend = Math.max(0, Math.ceil(3 * total - 4 * attended));
 
           let status: 'success' | 'warning' | 'danger';
@@ -76,19 +57,7 @@ const AttendanceTracker = () => {
           }
 
           parsed.push({
-            id,
-            code,
-            name,
-            type,
-            present,
-            od,
-            makeup,
-            absent,
-            percentage,
-            total,
-            canSkip,
-            needToAttend,
-            status,
+            id, code, name, type, present, od, makeup, absent, percentage, total, canSkip, needToAttend, status,
           });
         }
       }
@@ -112,13 +81,8 @@ const AttendanceTracker = () => {
     const totalAttended = subjects.reduce((sum, s) => sum + s.present + s.od + s.makeup, 0);
     const totalClasses = subjects.reduce((sum, s) => sum + s.total, 0);
     const overallPercentage = totalClasses > 0 ? (totalAttended / totalClasses) * 100 : 0;
-    
-    // Overall can skip: (4 * attended - 3 * total) / 3
     const overallCanSkip = Math.max(0, Math.floor((4 * totalAttended - 3 * totalClasses) / 3));
-    
-    // Overall need to attend: 3 * total - 4 * attended
     const overallNeedToAttend = Math.max(0, Math.ceil(3 * totalClasses - 4 * totalAttended));
-    
     const belowThreshold = subjects.filter(s => s.percentage < 75).length;
     const atRisk = subjects.filter(s => s.percentage >= 75 && s.percentage < 80).length;
     const safe = subjects.filter(s => s.percentage >= 80).length;
@@ -126,94 +90,116 @@ const AttendanceTracker = () => {
     return { totalAttended, totalClasses, overallPercentage, overallCanSkip, overallNeedToAttend, belowThreshold, atRisk, safe };
   }, [subjects]);
 
+  const getStatusEmoji = (percentage: number) => {
+    if (percentage >= 85) return "🔥";
+    if (percentage >= 75) return "😅";
+    return "💀";
+  };
+
   return (
-    <div className="min-h-screen p-4 md:p-8">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen p-4 md:p-8 relative overflow-hidden">
+      {/* Floating orbs for aesthetic */}
+      <div className="floating-orb w-96 h-96 bg-primary/30 top-[-10%] left-[-10%]" />
+      <div className="floating-orb w-64 h-64 bg-accent/30 top-[30%] right-[-5%]" style={{ animationDelay: '-3s' }} />
+      <div className="floating-orb w-80 h-80 bg-[hsl(330,100%,65%)]/20 bottom-[-10%] left-[20%]" style={{ animationDelay: '-5s' }} />
+
+      <div className="max-w-5xl mx-auto relative z-10">
         {/* Header */}
-        <div className="text-center mb-8 animate-fade-in">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4 glow-effect">
-            <BookOpen className="w-8 h-8 text-primary" />
+        <div className="text-center mb-10 animate-fade-in">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-gradient-to-br from-primary to-accent mb-6 neon-glow animate-pulse-glow">
+            <Sparkles className="w-10 h-10 text-background" />
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
-            Attendance Tracker
+          <h1 className="text-4xl md:text-6xl font-bold mb-3">
+            <span className="neon-text">attendance</span>
+            <span className="text-foreground"> tracker</span>
           </h1>
-          <p className="text-muted-foreground">
-            Paste your attendance report to analyze
+          <p className="text-muted-foreground text-lg">
+            paste ur report, see if u can bunk 💅
           </p>
         </div>
 
         {/* Input Section */}
-        <div className="glass-card rounded-3xl p-6 md:p-8 mb-6 animate-slide-up">
-          <label className="block text-sm font-medium text-muted-foreground mb-3">
-            Paste your attendance report here
+        <div className="glass-card rounded-3xl p-6 md:p-8 mb-8 animate-slide-up neon-border">
+          <label className="block text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
+            <span>📋</span> drop ur attendance data here bestie
           </label>
           <textarea
             value={rawInput}
             onChange={(e) => setRawInput(e.target.value)}
-            placeholder={`Paste your attendance table here...
+            placeholder={`paste that table fr fr...
 
-Example format:
 1	CSUL401	Database Management System	Lecture	3	0	0	3	50.00
 2	CSUL402	Theory of Computation	Lecture	3	0	0	2	60.00`}
-            className="input-field min-h-[150px] font-mono text-sm resize-y"
+            className="input-field min-h-[140px] resize-y"
           />
-          <div className="flex gap-3 mt-4">
+          <div className="flex gap-3 mt-5">
             <button
               onClick={handlePaste}
-              className="flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-primary-foreground font-semibold hover:opacity-90 transition-all"
+              className="flex items-center gap-2 px-8 py-4 rounded-2xl btn-neon text-base"
             >
-              <ClipboardPaste className="w-4 h-4" />
-              Analyze
+              <Zap className="w-5 h-5" />
+              analyze it ✨
             </button>
             <button
               onClick={handleClear}
-              className="flex items-center gap-2 px-6 py-3 rounded-xl bg-secondary text-secondary-foreground font-semibold hover:bg-muted transition-all"
+              className="flex items-center gap-2 px-6 py-4 rounded-2xl bg-secondary text-secondary-foreground font-semibold hover:bg-muted transition-all"
             >
-              <Trash2 className="w-4 h-4" />
-              Clear
+              <X className="w-5 h-5" />
+              clear
             </button>
           </div>
         </div>
 
         {/* Overall Stats */}
         {overallStats && (
-          <div className="space-y-4 mb-6 animate-fade-in">
+          <div className="space-y-5 mb-8 animate-slide-up-delay">
             {/* Main Overall Card */}
-            <div className={`glass-card rounded-2xl p-6 border-l-4 ${overallStats.overallPercentage >= 75 ? 'border-l-success' : 'border-l-danger'}`}>
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className={`glass-card rounded-3xl p-8 border-l-4 ${overallStats.overallPercentage >= 75 ? 'border-l-success' : 'border-l-danger'}`}>
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                 <div>
-                  <h3 className="text-lg font-semibold text-foreground mb-1">📊 Overall Combined</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Attended {overallStats.totalAttended} / {overallStats.totalClasses} total classes
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="text-3xl emoji-bounce">📊</span>
+                    <h3 className="text-2xl font-bold text-foreground">overall vibes</h3>
+                  </div>
+                  <p className="text-muted-foreground">
+                    {overallStats.totalAttended} / {overallStats.totalClasses} classes attended
                   </p>
                 </div>
-                <div className="text-center md:text-right px-4">
-                  <p className={`text-3xl font-bold ${overallStats.overallPercentage >= 75 ? 'text-success' : 'text-danger'}`}>
+                
+                <div className="text-center lg:text-right">
+                  <p className={`text-5xl font-bold stat-number ${overallStats.overallPercentage >= 75 ? 'text-success' : 'text-danger'}`}>
                     {overallStats.overallPercentage.toFixed(1)}%
                   </p>
-                  <p className="text-xs text-muted-foreground">Overall</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {getStatusEmoji(overallStats.overallPercentage)} current
+                  </p>
                 </div>
-                <div className={`flex items-center gap-3 px-4 py-3 rounded-xl min-w-[220px] ${
+
+                <div className={`flex items-center gap-4 px-6 py-5 rounded-2xl min-w-[260px] ${
                   overallStats.overallPercentage >= 75 ? 'result-card-success' : 'result-card-danger'
                 }`}>
                   {overallStats.overallPercentage >= 75 ? (
                     <>
-                      <TrendingDown className="w-5 h-5 text-success flex-shrink-0" />
+                      <div className="w-12 h-12 rounded-xl bg-success/20 flex items-center justify-center">
+                        <TrendingDown className="w-6 h-6 text-success" />
+                      </div>
                       <div>
-                        <p className="text-sm font-medium text-foreground">
-                          Can skip <span className="text-success font-bold">{overallStats.overallCanSkip}</span> class{overallStats.overallCanSkip !== 1 ? 'es' : ''} total
+                        <p className="text-lg font-bold text-foreground">
+                          skip <span className="text-success">{overallStats.overallCanSkip}</span> class{overallStats.overallCanSkip !== 1 ? 'es' : ''} 🎉
                         </p>
-                        <p className="text-xs text-muted-foreground">and stay at 75% overall</p>
+                        <p className="text-sm text-muted-foreground">still above 75% no cap</p>
                       </div>
                     </>
                   ) : (
                     <>
-                      <TrendingUp className="w-5 h-5 text-danger flex-shrink-0" />
+                      <div className="w-12 h-12 rounded-xl bg-danger/20 flex items-center justify-center">
+                        <TrendingUp className="w-6 h-6 text-danger" />
+                      </div>
                       <div>
-                        <p className="text-sm font-medium text-foreground">
-                          Need <span className="text-danger font-bold">{overallStats.overallNeedToAttend}</span> more class{overallStats.overallNeedToAttend !== 1 ? 'es' : ''}
+                        <p className="text-lg font-bold text-foreground">
+                          attend <span className="text-danger">{overallStats.overallNeedToAttend}</span> more 😭
                         </p>
-                        <p className="text-xs text-muted-foreground">to reach 75% overall</p>
+                        <p className="text-sm text-muted-foreground">to reach 75% bruh</p>
                       </div>
                     </>
                   )}
@@ -223,17 +209,20 @@ Example format:
 
             {/* Summary Stats */}
             <div className="grid grid-cols-3 gap-4">
-              <div className="glass-card rounded-2xl p-4 text-center">
-                <p className="text-muted-foreground text-sm mb-1">Below 75%</p>
-                <p className="text-2xl font-bold text-danger">{overallStats.belowThreshold}</p>
+              <div className="glass-card rounded-2xl p-5 text-center group hover:scale-105 transition-transform cursor-default">
+                <p className="text-4xl mb-2">💀</p>
+                <p className="text-3xl font-bold text-danger stat-number">{overallStats.belowThreshold}</p>
+                <p className="text-muted-foreground text-sm mt-1">below 75%</p>
               </div>
-              <div className="glass-card rounded-2xl p-4 text-center">
-                <p className="text-muted-foreground text-sm mb-1">At Risk (75-80%)</p>
-                <p className="text-2xl font-bold text-warning">{overallStats.atRisk}</p>
+              <div className="glass-card rounded-2xl p-5 text-center group hover:scale-105 transition-transform cursor-default">
+                <p className="text-4xl mb-2">😬</p>
+                <p className="text-3xl font-bold text-warning stat-number">{overallStats.atRisk}</p>
+                <p className="text-muted-foreground text-sm mt-1">risky (75-80%)</p>
               </div>
-              <div className="glass-card rounded-2xl p-4 text-center">
-                <p className="text-muted-foreground text-sm mb-1">Safe (80%+)</p>
-                <p className="text-2xl font-bold text-success">{overallStats.safe}</p>
+              <div className="glass-card rounded-2xl p-5 text-center group hover:scale-105 transition-transform cursor-default">
+                <p className="text-4xl mb-2">✅</p>
+                <p className="text-3xl font-bold text-success stat-number">{overallStats.safe}</p>
+                <p className="text-muted-foreground text-sm mt-1">we chillin (80%+)</p>
               </div>
             </div>
           </div>
@@ -241,66 +230,74 @@ Example format:
 
         {/* Subject Cards */}
         {subjects.length > 0 && (
-          <div className="grid gap-4 animate-fade-in">
-            {subjects.map((subject) => (
+          <div className="space-y-4 animate-fade-in">
+            <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
+              <span>📚</span> subject breakdown
+            </h2>
+            {subjects.map((subject, index) => (
               <div
                 key={subject.id}
-                className={`glass-card rounded-2xl p-5 border-l-4 ${
+                className={`glass-card rounded-2xl p-5 border-l-4 hover:scale-[1.02] transition-all duration-300 ${
                   subject.status === 'success' ? 'border-l-success' :
                   subject.status === 'warning' ? 'border-l-warning' : 'border-l-danger'
                 }`}
+                style={{ animationDelay: `${index * 0.05}s` }}
               >
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                   {/* Subject Info */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap mb-1">
-                      <span className="text-xs font-mono text-muted-foreground bg-secondary px-2 py-0.5 rounded">
+                    <div className="flex items-center gap-2 flex-wrap mb-2">
+                      <span className={`text-xs font-mono px-3 py-1 rounded-full ${
+                        subject.type === 'Lab' ? 'bg-accent/20 text-accent' : 'bg-primary/20 text-primary'
+                      }`}>
                         {subject.code}
                       </span>
-                      <span className="text-xs text-muted-foreground bg-secondary/50 px-2 py-0.5 rounded">
+                      <span className="text-xs text-muted-foreground bg-secondary px-3 py-1 rounded-full">
                         {subject.type}
                       </span>
                     </div>
-                    <h3 className="font-semibold text-foreground truncate">{subject.name}</h3>
+                    <h3 className="font-semibold text-foreground text-lg truncate">{subject.name}</h3>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Attended {subject.present + subject.od + subject.makeup} / {subject.total} classes
-                      {subject.absent > 0 && <span className="text-danger"> • {subject.absent} absent</span>}
+                      {subject.present + subject.od + subject.makeup}/{subject.total} attended
+                      {subject.absent > 0 && <span className="text-danger ml-2">• {subject.absent} bunked 💨</span>}
                     </p>
                   </div>
 
                   {/* Current Percentage */}
-                  <div className="text-center md:text-right px-4">
-                    <p className={`text-3xl font-bold ${
-                      subject.status === 'success' ? 'text-success' :
-                      subject.status === 'warning' ? 'text-warning' : 'text-danger'
-                    }`}>
-                      {subject.percentage.toFixed(1)}%
-                    </p>
-                    <p className="text-xs text-muted-foreground">Current</p>
+                  <div className="text-center lg:text-right px-4">
+                    <div className="flex items-center gap-2 justify-center lg:justify-end">
+                      <span className="text-2xl">{getStatusEmoji(subject.percentage)}</span>
+                      <p className={`text-4xl font-bold stat-number ${
+                        subject.status === 'success' ? 'text-success' :
+                        subject.status === 'warning' ? 'text-warning' : 'text-danger'
+                      }`}>
+                        {subject.percentage.toFixed(0)}%
+                      </p>
+                    </div>
                   </div>
 
                   {/* Action Required */}
-                  <div className={`flex items-center gap-3 px-4 py-3 rounded-xl min-w-[200px] ${
+                  <div className={`flex items-center gap-3 px-5 py-4 rounded-xl min-w-[220px] ${
                     subject.percentage >= 75 ? 'result-card-success' : 'result-card-danger'
                   }`}>
                     {subject.percentage >= 75 ? (
                       <>
                         <TrendingDown className="w-5 h-5 text-success flex-shrink-0" />
                         <div>
-                          <p className="text-sm font-medium text-foreground">
-                            Can skip <span className="text-success font-bold">{subject.canSkip}</span> class{subject.canSkip !== 1 ? 'es' : ''}
+                          <p className="text-sm font-semibold text-foreground">
+                            can skip <span className="text-success font-bold">{subject.canSkip}</span> 🏃
                           </p>
-                          <p className="text-xs text-muted-foreground">and stay at 75%</p>
+                          <p className="text-xs text-muted-foreground">still safe at 75%</p>
                         </div>
                       </>
                     ) : (
                       <>
                         <TrendingUp className="w-5 h-5 text-danger flex-shrink-0" />
                         <div>
-                          <p className="text-sm font-medium text-foreground">
-                            Need <span className="text-danger font-bold">{subject.needToAttend}</span> more class{subject.needToAttend !== 1 ? 'es' : ''}
+                          <p className="text-sm font-semibold text-foreground">
+                            need <span className="text-danger font-bold">{subject.needToAttend}</span> more 😰
                           </p>
-                          <p className="text-xs text-muted-foreground">to reach 75%</p>
+                          <p className="text-xs text-muted-foreground">to hit 75%</p>
                         </div>
                       </>
                     )}
@@ -313,18 +310,18 @@ Example format:
 
         {/* Empty State */}
         {subjects.length === 0 && !rawInput && (
-          <div className="glass-card rounded-3xl p-12 text-center animate-fade-in">
-            <AlertCircle className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-muted-foreground mb-2">No Data Yet</h3>
-            <p className="text-muted-foreground/80">
-              Paste your attendance report above to see analysis
+          <div className="glass-card rounded-3xl p-16 text-center animate-fade-in neon-border">
+            <Ghost className="w-20 h-20 text-muted-foreground/30 mx-auto mb-6" />
+            <h3 className="text-2xl font-bold text-foreground mb-3">no data yet bestie</h3>
+            <p className="text-muted-foreground">
+              paste ur attendance report above to see the tea ☕
             </p>
           </div>
         )}
 
         {/* Footer */}
-        <p className="text-center text-muted-foreground/60 text-xs mt-8">
-          Target attendance: 75% minimum • Calculations assume you attend/miss future classes consecutively
+        <p className="text-center text-muted-foreground/50 text-sm mt-10 flex items-center justify-center gap-2">
+          <span>🎯</span> target: 75% minimum • built different ✨
         </p>
       </div>
     </div>
