@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
-import { Sparkles, TrendingUp, TrendingDown, Zap, X, Ghost } from "lucide-react";
+import { TrendingUp, TrendingDown, Zap, X, Ghost } from "lucide-react";
+import Layout from "@/components/Layout";
 
 interface SubjectData {
   id: number;
@@ -97,24 +98,16 @@ const AttendanceTracker = () => {
   };
 
   return (
-    <div className="min-h-screen p-4 md:p-8 relative overflow-hidden">
-      {/* Floating orbs for aesthetic */}
-      <div className="floating-orb w-96 h-96 bg-primary/30 top-[-10%] left-[-10%]" />
-      <div className="floating-orb w-64 h-64 bg-accent/30 top-[30%] right-[-5%]" style={{ animationDelay: '-3s' }} />
-      <div className="floating-orb w-80 h-80 bg-[hsl(330,100%,65%)]/20 bottom-[-10%] left-[20%]" style={{ animationDelay: '-5s' }} />
-
-      <div className="max-w-5xl mx-auto relative z-10">
+    <Layout>
+      <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="text-center mb-10 animate-fade-in">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-gradient-to-br from-primary to-accent mb-6 neon-glow animate-pulse-glow">
-            <Sparkles className="w-10 h-10 text-background" />
-          </div>
-          <h1 className="text-4xl md:text-6xl font-bold mb-3">
-            <span className="neon-text">attendance</span>
-            <span className="text-foreground"> tracker</span>
+          <h1 className="text-4xl md:text-5xl font-bold mb-3">
+            <span className="neon-text">paste &</span>
+            <span className="text-foreground"> analyze</span>
           </h1>
           <p className="text-muted-foreground text-lg">
-            paste ur report, see if u can bunk 💅
+            drop ur report, see if u can bunk 💅
           </p>
         </div>
 
@@ -319,12 +312,8 @@ const AttendanceTracker = () => {
           </div>
         )}
 
-        {/* Footer */}
-        <p className="text-center text-muted-foreground/50 text-sm mt-10 flex items-center justify-center gap-2">
-          <span>🎯</span> target: 75% minimum • built different ✨
-        </p>
       </div>
-    </div>
+    </Layout>
   );
 };
 
