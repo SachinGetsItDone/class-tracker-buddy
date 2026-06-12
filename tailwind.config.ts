@@ -12,6 +12,10 @@ export default {
         "2xl": "1400px",
       },
     },
+
+// huu
+
+    
     extend: {
       fontFamily: {
         sans: ['Space Grotesk', 'system-ui', 'sans-serif'],
